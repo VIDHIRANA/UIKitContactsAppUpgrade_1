@@ -54,10 +54,22 @@ final class ContactCell: UITableViewCell {
     
     /// Configures the cell with data.
     /// Logic is strictly limited to mapping data to UI elements.
-    func configure(with contact: Contact) {
+    /*
+     Cell depends on ViewModel instead of Model
+     to avoid UI logic leaking into the view layer.
+    */
+    /*func configure(with contact: Contact) {
         nameLabel.text = contact.name
         phoneLabel.text = contact.phoneNumber
     }
+    */
+    func configure(with viewModel: ContactCellViewModel) {
+        nameLabel.text = viewModel.displayName
+        phoneLabel.text = viewModel.displayPhoneNumber
+    }
+
+    
+    
     
     // MARK: - UI Setup
     

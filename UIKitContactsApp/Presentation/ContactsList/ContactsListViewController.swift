@@ -7,9 +7,7 @@
 
 import UIKit
 
-// 📌 INTERVIEW NOTE: Why final?
-// `final` prevents inheritance. This improves compile-time performance (static dispatch)
-// and clearly signals that this class is not designed to be subclassed.
+
 final class ContactsListViewController: UIViewController {
 
     // MARK: - UI Components
@@ -19,6 +17,12 @@ final class ContactsListViewController: UIViewController {
     // MARK: - Data
     
     private var contacts: [Contact] = []
+    
+    // MARK: - View Model
+    // add the new property of View Model
+
+    private let viewModel = ContactsListViewModel()
+
 
     // MARK: - Lifecycle
 
@@ -26,7 +30,9 @@ final class ContactsListViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupTableView()
-        loadContacts()
+        // changed loadContact() to  viewModel.loadContacts()
+        viewModel.loadContacts()
+        tableView.reloadData()
     }
 
     // MARK: - Setup
@@ -61,12 +67,7 @@ final class ContactsListViewController: UIViewController {
     }
     
     private func loadContacts() {
-        // 📌 INTERVIEW NOTE: Why hardcoded data is acceptable here.
-        /*
-         Using hardcoded sample data for UI development
-         before connecting to any backend.
-         This speeds up UI work and avoids dependence on network.
-        */
+        
         contacts = [
             Contact(name: "Alice Johnson", phoneNumber: "(555) 123-4567"),
             Contact(name: "Bob Smith", phoneNumber: "(555) 987-6543"),
@@ -97,51 +98,46 @@ final class ContactsListViewController: UIViewController {
 extension ContactsListViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return contacts.count
+        viewModel.numberOfContacts
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        // 📌 INTERVIEW NOTE (Q1): Why UITableView reuses cells?
-        /*
-         Dequeuing cells reuses memory instead of creating new ones,
-         improving performance drastically.
-        */
         
         guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: ContactCell.reuseIdentifier,
-            for: indexPath
-        ) as? ContactCell else {
-            // 📌 INTERVIEW NOTE (Q2): What happens if reuseIdentifier is wrong?
-            // If the ID is unregistered, the app crashes with NSInternalInconsistencyException.
-            // If we fail to cast (as? ContactCell), we return a default cell to prevent a crash,
-            // but the UI will look broken (blank row).
-            return UITableViewCell()
+                withIdentifier: ContactCell.reuseIdentifier,
+                for: indexPath
+            ) as? ContactCell else {
+                return UITableViewCell()
         }
 
-        let contact = contacts[indexPath.row]
-        cell.configure(with: contact)
+        let CellViewModel = viewModel.cellViewModel(at: indexPath.row)
+        cell.configure(with: CellViewModel)
         return cell
     }
+    /* 📌 Notice:
+     
+     ViewController never touches Contact for UI
+
+     Clean separation achieved */
 }
+
 
 // MARK: - UITableViewDelegate
 
 extension ContactsListViewController: UITableViewDelegate {
    
-    /*
-     Using initializer injection ensures required data
-     is provided when the view controller is created.
-    */
+    /* Navigation (STAYS SAME, BUT CLEANER)
+     📌 ViewController handles navigation, not ViewModel
+     (important UIKit convention).
+     */
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Deselect the row for a nice animation effect
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        let selectedContact = contacts[indexPath.row]
-        
-        // Navigate to Detail Screen
-        let detailVC = ContactDetailViewController(contact: selectedContact)
+    func tableView(_ tableView: UITableView,
+                   didSelectRowAt indexPath: IndexPath) {
+
+        let contact = viewModel.contact(at: indexPath.row)
+        let detailVC = ContactDetailViewController(contact: contact)
         navigationController?.pushViewController(detailVC, animated: true)
     }
+
 }
